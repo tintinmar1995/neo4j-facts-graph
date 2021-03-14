@@ -1,6 +1,30 @@
 import pandas as pd
+import docker
+import time
 from py2neo import Graph, Node, Relationship, NodeMatcher
 
+##############################
+### ENSURE NEO4J IS RUNNING  #
+##############################
+
+client = docker.from_env()
+if 'neo4j-facts' in [cont.name for cont in client.containers.list(all=True)]:
+    container = client.containers.get('neo4j-facts')
+elif input('Container not found : press y if you want to create it\n')=='y' :
+    container = client.containers.run('neo4j:4.0.7',
+                                      name='neo4j-facts',
+                                      ports={'7474/tcp': 7474, '7687/tcp': 7687},
+                                      volumes={'/home/martin/neo4j-facts/data': {'bind': '/data', 'mode': 'rw'}},
+                                      environment={'NEO4J_AUTH':'neo4j/neo', 'NEO4JLABS_PLUGINS':'["n10s"]'})
+else :
+    raise Exception('Docker container not found')
+    
+if container.status != "running":
+    print('Starting containers..')
+    container.start()
+    time.sleep(30)
+    
+    
 class FactGraph():
         
     def __init__(self, *args, **kwargs):
